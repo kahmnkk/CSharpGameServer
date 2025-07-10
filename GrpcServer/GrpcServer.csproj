@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Protos/*.proto" GrpcServices="Server" />
+    <Protobuf Access="public" Include="Protos/api/**/*.proto" GrpcServices="Both" ProtoRoot="Protos" AdditionalImportDirs="Protos/third_party" />
+    <Protobuf Access="internal" Include="Protos/third_party/google/**/*.proto" GrpcServices="Both" ProtoRoot="Protos/third_party" OutputDir="$(IntermediateOutputPath)/ThirdParty/google" />
+    <Protobuf Access="internal" Include="Protos/third_party/protoc-gen-openapiv2/**/*.proto" GrpcServices="Both" ProtoRoot="Protos/third_party" OutputDir="$(IntermediateOutputPath)/ThirdParty/protoc-gen-openapiv2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.AspNetCore" Version="2.64.0" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package matchmaker;
+
+option csharp_namespace = "MatchMaker";
+
+service MatchService {
+  rpc StartMatch(StartMatchRequest) returns (StartMatchResponse);
+  rpc WatchTicket(WatchTicketRequest) returns (stream GameAssignment);
+  rpc CancelMatch(CancelMatchRequest) returns (CancelMatchResponse);
+}
+
+message StartMatchRequest {
+  string user_id = 1;
+  string mode = 2;
+}
+
+message StartMatchResponse {
+  uint32 result = 1;
+  string ticket_id = 2;
+}
+
+message WatchTicketRequest {
+  string ticket_id = 1;
+}
+
+message GameAssignment {
+  uint32 result = 1;
+  string connection = 2;
+}
+
+message CancelMatchRequest {
+  string ticket_id = 1;
+}
+
+message CancelMatchResponse {
+  uint32 result = 1;
+}
