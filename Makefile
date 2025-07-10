@@ -28,9 +28,9 @@ pub-grpc-server: build-grpc-server push-grpc-server
 .PHONY: build-director push-director
 build-director:
 	DOCKER_BUILDKIT=1 docker $(DOCKER_BUILD_FLAG) \
-		-f ./MatchMaker/director/Dockerfile \
+		-f ./OpenMatch/director/Dockerfile \
 		-t $(REGISTRY)/openmatch-director:latest \
-		./MatchMaker/director
+		./OpenMatch/director
 push-director:
 	docker push $(REGISTRY)/openmatch-director:latest
 pub-director: build-director push-director
@@ -38,9 +38,9 @@ pub-director: build-director push-director
 .PHONY: build-mmf push-mmf
 build-mmf:
 	DOCKER_BUILDKIT=1 docker $(DOCKER_BUILD_FLAG) \
-		-f ./MatchMaker/matchfunction/Dockerfile \
+		-f ./OpenMatch/matchfunction/Dockerfile \
 		-t $(REGISTRY)/openmatch-mmf:latest \
-		./MatchMaker/matchfunction
+		./OpenMatch/matchfunction
 push-mmf:
 	docker push $(REGISTRY)/openmatch-mmf:latest
 pub-mmf: build-mmf push-mmf
