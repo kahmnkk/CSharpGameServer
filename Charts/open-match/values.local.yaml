@@ -1,0 +1,62 @@
+query: &query
+  replicas: 1
+frontend: &frontend
+  replicas: 1
+backend: &backend
+  replicas: 1
+synchronizer: &synchronizer
+  replicas: 1
+evaluator: &evaluator
+  enabled: true
+  replicas: 1
+
+redis:
+  metrics:
+    enabled: false
+
+open-match-core:
+  swaggerui:
+    enabled: false
+
+open-match-customize:
+  enabled: true
+  evaluator: *evaluator
+
+open-match-override:
+  enabled: true
+
+global:
+  kubernetes:
+    horizontalPodAutoScaler:
+      frontend:
+        minReplicas: 1
+        maxReplicas: 1
+        targetCPUUtilizationPercentage: 60
+      backend:
+        minReplicas: 1
+        maxReplicas: 1
+        targetCPUUtilizationPercentage: 60
+      query:
+        minReplicas: 1
+        maxReplicas: 1
+        targetCPUUtilizationPercentage: 60
+      evaluator:
+        minReplicas: 1
+        maxReplicas: 1
+        targetCPUUtilizationPercentage: 60
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 100m
+      limits:
+        memory: 100Mi
+        cpu: 100m
+
+  gcpProjectId: "local"
+
+  logging:
+    level: debug
+
+  telemetry:
+    prometheus:
+      enabled: false

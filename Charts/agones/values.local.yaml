@@ -1,0 +1,36 @@
+agones:
+  controller:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 50m
+        memory: 128Mi
+  ping:
+    install: false
+  allocator:
+    replicas: 1
+    service:
+      serviceType: NodePort
+      http:
+        enabled: false
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+    generateClientTLS: false
+    generateTLS: false
+    disableMTLS: true
+    disableTLS: true
+    disableSecretCreation: true
+  extensions:
+    replicas: 1
+
+gameservers:
+  minPort: 7006
+  maxPort: 7006
