@@ -51,6 +51,8 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "k8s"
             - name: DOTNET_USE_POLLING_FILE_WATCHER
               value: "1"
           volumeMounts:
