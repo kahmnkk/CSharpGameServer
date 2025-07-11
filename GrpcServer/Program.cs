@@ -6,11 +6,6 @@ using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Configuration
-    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-    .AddJsonFile("/app/config/appsettings.k8s.json", optional: true, reloadOnChange: true)
-    .AddEnvironmentVariables();
-
 builder.Services.Configure<OpenMatchSettings>(
     builder.Configuration.GetSection("OpenMatch"));
 
