@@ -42,12 +42,7 @@ nodes:
       scheduler:
         extraArgs:
           feature-gates: "InPlacePodVerticalScaling=true"
-    image: ${KIND_NODE_VERSION}
     extraPortMappings:
-      - containerPort: 30081 # GrpcServer
-        hostPort: 8081
-        listenAddress: "0.0.0.0"
-        protocol: tcp
       - containerPort: 30306 # MySQL
         hostPort: 3306
         listenAddress: "0.0.0.0"
@@ -69,11 +64,8 @@ nodes:
         listenAddress: "0.0.0.0"
         protocol: tcp
   - role: worker
-    image: ${KIND_NODE_VERSION}
   - role: worker
-    image: ${KIND_NODE_VERSION}
   - role: worker
-    image: ${KIND_NODE_VERSION}
 EOF
 
 # connect the registry to the cluster network if not already connected

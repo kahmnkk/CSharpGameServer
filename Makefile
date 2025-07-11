@@ -151,7 +151,7 @@ kind-restart: run-kind-delete run-kind-create
 ###############################
 ### Utils
 ###############################
-
+SHELL := /bin/bash
 confirm:
 	@if [[ -z "$(CI)" ]]; then \
 	  read -p "⚠ Are you sure ❓ [Y/n] > " -r && [[ $$REPLY =~ ^[Y]$$ ]] || { echo "Stopping"; exit 1; }; \
