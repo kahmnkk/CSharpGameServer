@@ -25,6 +25,18 @@ push-grpc-server:
 	docker push $(REGISTRY)/grpc-server:$(TAG)
 pub-grpc-server: build-grpc-server push-grpc-server
 
+.PHONY: build-game-server push-game-server pub-game-server
+build-game-server:
+	DOCKER_BUILDKIT=1 docker $(DOCKER_BUILD_FLAG) \
+		-f ./GameServer/Dockerfile \
+		-t $(REGISTRY)/game-server:latest \
+		-t $(REGISTRY)/game-server:$(TAG) \
+		./GameServer
+push-game-server:
+	docker push $(REGISTRY)/game-server:latest
+	docker push $(REGISTRY)/game-server:$(TAG)
+pub-game-server: build-game-server push-game-server
+
 .PHONY: build-director push-director
 build-director:
 	DOCKER_BUILDKIT=1 docker $(DOCKER_BUILD_FLAG) \
@@ -70,6 +82,28 @@ run-remove-grpc-server:
 	helm uninstall grpc-server -n default \
 		--kube-context $(CONTEXT)
 remove-grpc-server: echo-remove-grpc-server confirm run-remove-grpc-server
+
+.PHONY: deploy-game-server
+echo-deploy-game-server:
+	@echo "    helm upgrade --install game-server Charts/game-server \\"
+	@echo "        -f Charts/game-server/values.$(STAGE).yaml \\"
+	@echo "        -n default --create-namespace \\"
+	@echo "        --kube-context $(CONTEXT)"
+run-deploy-game-server:
+	helm upgrade --install game-server Charts/game-server \
+		-f Charts/game-server/values.$(STAGE).yaml \
+		-n default --create-namespace \
+		--kube-context $(CONTEXT)
+deploy-game-server: echo-deploy-game-server confirm run-deploy-game-server
+
+.PHONY: remove-game-server
+echo-remove-game-server:
+	@echo "    helm uninstall game-server -n default \\"
+	@echo "        --kube-context $(CONTEXT)"
+run-remove-game-server:
+	helm uninstall game-server -n default \
+		--kube-context $(CONTEXT)
+remove-game-server: echo-remove-game-server confirm run-remove-game-server
 
 .PHONY: deploy-agones
 echo-deploy-agones:
