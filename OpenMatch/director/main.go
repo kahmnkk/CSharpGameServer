@@ -4,23 +4,24 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"math/rand"
 	"os"
 	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
+	allocation "agones.dev/agones/pkg/allocation/go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"open-match.dev/open-match/pkg/pb"
 )
 
 const (
-	omBackendEndpoint         = "open-match-backend.open-match.svc.cluster.local:50505"
-	functionHostName          = "open-match-mmf.open-match.svc.cluster.local"
-	functionPort        int32 = 50502
-	maxConcurrentAssign       = 100
+	omBackendEndpoint             = "open-match-backend.open-match.svc.cluster.local:50505"
+	agonesAllocatorEndpoint       = "agones-allocator.agones.svc.cluster.local:443"
+	functionHostName              = "open-match-mmf.open-match.svc.cluster.local"
+	functionPort            int32 = 50502
+	maxConcurrentAssign           = 100
 )
 
 func getLogLevel() log.Level {
@@ -55,6 +56,14 @@ func main() {
 	defer omConn.Close()
 	be := pb.NewBackendServiceClient(omConn)
 
+	aaConn, err := grpc.NewClient(agonesAllocatorEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect to Agones Allocator, got %s", err.Error())
+	}
+
+	defer aaConn.Close()
+	aa := allocation.NewAllocationServiceClient(aaConn)
+
 	// Generate the profiles to fetch matches for.
 	profiles := generateProfiles()
 	log.Infof("Fetching matches for %v profiles", len(profiles))
@@ -62,7 +71,7 @@ func main() {
 	matchesToAssign := make(chan *pb.Match, 30000)
 
 	for i := 0; i < maxConcurrentAssign; i++ {
-		go assign(be, matchesToAssign)
+		go assign(be, aa, matchesToAssign)
 	}
 
 	for range time.Tick(time.Second * 5) {
@@ -116,39 +125,54 @@ func fetch(be pb.BackendServiceClient, p *pb.MatchProfile, matchesToAssign chan<
 	}
 }
 
-func assign(be pb.BackendServiceClient, matchesToAssign <-chan *pb.Match) {
+func assign(be pb.BackendServiceClient, aa allocation.AllocationServiceClient, matchesToAssign <-chan *pb.Match) {
 	for match := range matchesToAssign {
-		if match == nil {
-			log.Debugf("Received nil match, skipping")
-			continue
-		}
+		func() {
+			ctx, f := context.WithTimeout(context.Background(), time.Second*30)
+			defer f()
 
-		log.Debugf("Generated match for profile %s", match.MatchProfile)
+			if match == nil {
+				log.Debugf("Received nil match, skipping")
+				return
+			}
 
-		ticketIDs := []string{}
-		for _, t := range match.GetTickets() {
-			ticketIDs = append(ticketIDs, t.Id)
-		}
+			log.Debugf("Generated match for profile %s", match.MatchProfile)
 
-		// TODO add Agones allocation logic here.
+			ticketIDs := []string{}
+			for _, t := range match.GetTickets() {
+				ticketIDs = append(ticketIDs, t.Id)
+			}
 
-		conn := fmt.Sprintf("%d.%d.%d.%d:2222", rand.Intn(256), rand.Intn(256), rand.Intn(256), rand.Intn(256))
-		req := &pb.AssignTicketsRequest{
-			Assignments: []*pb.AssignmentGroup{
-				{
-					TicketIds: ticketIDs,
-					Assignment: &pb.Assignment{
-						Connection: conn,
+			aaReq := &allocation.AllocationRequest{
+				Namespace: "default",
+			}
+
+			aaRes, err := aa.Allocate(ctx, aaReq)
+			if err != err {
+				log.Errorf("Agones allocation failed for match %v, got %v", match.GetMatchId(), err)
+				return
+			}
+
+			log.Infof("addres %s, ports %v", aaRes.Address, aaRes.Ports)
+
+			conn := fmt.Sprintf("%s:%d", aaRes.Address, aaRes.Ports[0].Port)
+			beReq := &pb.AssignTicketsRequest{
+				Assignments: []*pb.AssignmentGroup{
+					{
+						TicketIds: ticketIDs,
+						Assignment: &pb.Assignment{
+							Connection: conn,
+						},
 					},
 				},
-			},
-		}
+			}
 
-		if _, err := be.AssignTickets(context.Background(), req); err != nil {
-			log.Errorf("AssignTickets failed for match %v, got %v", match.GetMatchId(), err)
-			return
-		}
+			if _, err := be.AssignTickets(context.Background(), beReq); err != nil {
+				log.Errorf("AssignTickets failed for match %v, got %v", match.GetMatchId(), err)
+				return
+			}
 
-		log.Infof("Assigned server %v to match %v", conn, match.GetMatchId())
+			log.Infof("Assigned server %v to match %v", conn, match.GetMatchId())
+		}()
 	}
 }
