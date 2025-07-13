@@ -115,6 +115,28 @@ run-remove-open-match:
 		--kube-context $(CONTEXT)
 remove-open-match: echo-remove-open-match confirm run-remove-open-match
 
+.PHONY: deploy-open-match-custom
+echo-deploy-open-match-custom:
+	@echo "    helm upgrade --install open-match-custom Charts/open-match-custom \\"
+	@echo "        -f Charts/open-match-custom/values.$(STAGE).yaml \\"
+	@echo "        -n open-match --create-namespace \\"
+	@echo "        --kube-context $(CONTEXT)"
+run-deploy-open-match-custom:
+	helm upgrade --install open-match-custom Charts/open-match-custom \
+		-f Charts/open-match-custom/values.$(STAGE).yaml \
+		-n open-match --create-namespace \
+		--kube-context $(CONTEXT)
+deploy-open-match-custom: echo-deploy-open-match-custom confirm run-deploy-open-match-custom
+
+.PHONY: remove-open-match-custom
+echo-remove-open-match-custom:
+	@echo "    helm uninstall open-match-custom -n open-match \\"
+	@echo "        --kube-context $(CONTEXT)"
+run-remove-open-match-custom:
+	helm uninstall open-match-custom -n open-match \
+		--kube-context $(CONTEXT)
+remove-open-match-custom: echo-remove-open-match-custom confirm run-remove-open-match-custom
+
 ###############################
 ### Kind Cluster
 ###############################

@@ -3,6 +3,8 @@ module github.com/kyuhh1214/CSharpServer/MatchMaker/matchfunction
 go 1.24.4
 
 require (
+	github.com/rs/xid v1.5.0
+	github.com/sirupsen/logrus v1.9.3
 	google.golang.org/grpc v1.73.0
 	open-match.dev/open-match v1.8.1
 )

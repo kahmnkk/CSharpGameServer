@@ -2,9 +2,9 @@ package mmf
 
 import (
 	"fmt"
-	"log"
 	"net"
 
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"open-match.dev/open-match/pkg/pb"
@@ -41,7 +41,7 @@ func Start(queryServiceAddr string, serverPort int) {
 		log.Fatalf("TCP net listener initialization failed for port %v, got %s", serverPort, err.Error())
 	}
 
-	log.Printf("TCP net listener initialized for port %v", serverPort)
+	log.Infof("TCP net listener initialized for port %v", serverPort)
 	err = server.Serve(ln)
 	if err != nil {
 		log.Fatalf("gRPC serve failed, got %s", err.Error())

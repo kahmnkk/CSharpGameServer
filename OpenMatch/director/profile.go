@@ -4,16 +4,16 @@ import (
 	"open-match.dev/open-match/pkg/pb"
 )
 
-// generateProfiles generates test profiles for the matchmaker101 tutorial.
+// generateProfiles generates match profiles
 func generateProfiles() []*pb.MatchProfile {
 	var profiles []*pb.MatchProfile
-	modes := []string{"mode.demo", "mode.ctf", "mode.battleroyale"}
+	modes := []string{"mode.random"}
 	for _, mode := range modes {
 		profiles = append(profiles, &pb.MatchProfile{
-			Name: "mode_based_profile_" + mode,
+			Name: "match_" + mode,
 			Pools: []*pb.Pool{
 				{
-					Name: "pool_mode_" + mode,
+					Name: "pool_" + mode,
 					TagPresentFilters: []*pb.TagPresentFilter{
 						{
 							Tag: mode,

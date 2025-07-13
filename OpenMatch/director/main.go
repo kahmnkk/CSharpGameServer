@@ -4,29 +4,48 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"math/rand"
+	"os"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"open-match.dev/open-match/pkg/pb"
 )
 
-// The Director in this tutorial continously polls Open Match for the Match
-// Profiles and makes random assignments for the Tickets in the returned matches.
-
 const (
-	// The endpoint for the Open Match Backend service.
-	omBackendEndpoint = "open-match-backend.open-match.svc.cluster.local:50505"
-	// The Host and Port for the Match Function service endpoint.
-	functionHostName          = "mm101-tutorial-matchfunction.mm101-tutorial.svc.cluster.local"
+	omBackendEndpoint         = "open-match-backend.open-match.svc.cluster.local:50505"
+	functionHostName          = "open-match-mmf.open-match.svc.cluster.local"
 	functionPort        int32 = 50502
 	maxConcurrentAssign       = 100
 )
 
+func getLogLevel() log.Level {
+	switch os.Getenv("LOG_LEVEL") {
+	case "trace":
+		return log.TraceLevel
+	case "debug":
+		return log.DebugLevel
+	case "info":
+		return log.InfoLevel
+	case "warn":
+		return log.WarnLevel
+	case "error":
+		return log.ErrorLevel
+	}
+
+	return log.InfoLevel
+}
+
 func main() {
+	log.SetLevel(getLogLevel())
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
+
 	// Connect to Open Match Backend.
 	omConn, err := grpc.NewClient(omBackendEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -38,7 +57,7 @@ func main() {
 
 	// Generate the profiles to fetch matches for.
 	profiles := generateProfiles()
-	log.Printf("Fetching matches for %v profiles", len(profiles))
+	log.Infof("Fetching matches for %v profiles", len(profiles))
 
 	matchesToAssign := make(chan *pb.Match, 30000)
 
@@ -75,19 +94,23 @@ func fetch(be pb.BackendServiceClient, p *pb.MatchProfile, matchesToAssign chan<
 
 	stream, err := be.FetchMatches(context.Background(), req)
 	if err != nil {
-		log.Printf("Failed to fetch matches for profile %v, got %v", p.GetName(), err)
+		log.Errorf("Failed to fetch matches for profile %v, got %v", p.GetName(), err)
+		return
 	}
 
 	for {
 		resp, err := stream.Recv()
 		if err == io.EOF {
-			log.Printf("Failed to receive match stream: %v", err)
+			log.Debugf("Finished receiving match stream")
 			return
 		}
 
 		if err != nil {
-			log.Printf("Failed to get matches form stream, got %v", err)
+			log.Errorf("Failed to get matches from stream, got %v", err)
+			return
 		}
+
+		log.Infof("Match fetched for profile %v", p.GetName())
 
 		matchesToAssign <- resp.GetMatch()
 	}
@@ -95,7 +118,12 @@ func fetch(be pb.BackendServiceClient, p *pb.MatchProfile, matchesToAssign chan<
 
 func assign(be pb.BackendServiceClient, matchesToAssign <-chan *pb.Match) {
 	for match := range matchesToAssign {
-		log.Printf("Generated match for profile %s", match.MatchProfile)
+		if match == nil {
+			log.Debugf("Received nil match, skipping")
+			continue
+		}
+
+		log.Debugf("Generated match for profile %s", match.MatchProfile)
 
 		ticketIDs := []string{}
 		for _, t := range match.GetTickets() {
@@ -117,10 +145,10 @@ func assign(be pb.BackendServiceClient, matchesToAssign <-chan *pb.Match) {
 		}
 
 		if _, err := be.AssignTickets(context.Background(), req); err != nil {
-			log.Printf("AssignTickets failed for match %v, got %v", match.GetMatchId(), err)
+			log.Errorf("AssignTickets failed for match %v, got %v", match.GetMatchId(), err)
 			return
 		}
 
-		log.Printf("Assigned server %v to match %v", conn, match.GetMatchId())
+		log.Infof("Assigned server %v to match %v", conn, match.GetMatchId())
 	}
 }
