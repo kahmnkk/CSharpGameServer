@@ -36,6 +36,7 @@ make kind-restart
 
 ```shell
 make pub-grpc-server STAGE=local
+make pub-game-server STAGE=local
 
 make pub-director STAGE=local
 make pub-mmf STAGE=local
@@ -49,6 +50,8 @@ make deploy-grpc-server STAGE=local
 make deploy-open-match STAGE=local
 
 make deploy-agones STAGE=local
+
+make deploy-game-server STAGE=local
 ```
 
 ### Port-fowarding
