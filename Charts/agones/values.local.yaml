@@ -1,4 +1,5 @@
 agones:
+  featureGates: "SidecarContainers=true"
   controller:
     replicas: 1
     resources:
@@ -32,5 +33,7 @@ agones:
     replicas: 1
 
 gameservers:
-  minPort: 7006
-  maxPort: 7006
+  namespaces:
+    - default
+  minPort: 8082
+  maxPort: 8082
