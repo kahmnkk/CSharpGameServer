@@ -1,0 +1,35 @@
+apiVersion: "agones.dev/v1"
+kind: Fleet
+metadata:
+  name: {{ include "game-server.fullname" . }}
+  labels:
+    {{- include "game-server.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- else }}
+  scheduling: {{ .Values.scheduling }}
+  {{- end }}
+  template:
+    {{- with .Values.podAnnotations }}
+    annotations:
+      {{- toYaml . | nindent 8 }}
+    {{- end }}
+    labels:
+    {{- include "game-server.labels" . | nindent 8 }}
+    {{- with .Values.podLabels }}
+      {{- toYaml . | nindent 8 }}
+    {{- end }}
+    spec:
+      ports:
+        - name: default
+          protocol: TCP
+          containerPort: {{ .Values.service.port }}
+      template:
+        spec:
+          containers:
+          - name: game-server
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+            imagePullPolicy: {{ .Values.image.pullPolicy }}
+            resources:
+              {{ toYaml .Values.resources | indent 14 }}

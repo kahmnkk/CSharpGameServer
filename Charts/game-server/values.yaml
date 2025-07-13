@@ -1,0 +1,39 @@
+replicaCount: 1
+
+image:
+  repository: localhost:5001/game-server
+  pullPolicy: Always
+  tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+podLabels: {}
+
+service:
+  type: ClusterIP
+  port: 8082
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+scheduling: Packed
+
+autoscaling:
+  enabled: false
+  policy:
+    type: Buffer
+    buffer:
+      bufferSize: 2
+      minReplicas: 2
+      maxReplicas: 5
+  sync:
+    type: FixedInterval
+    fixedInterval:
+      seconds: 30

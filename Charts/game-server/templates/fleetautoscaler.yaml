@@ -1,0 +1,14 @@
+{{- if .Values.autoscaling.enabled }}
+apiVersion: "autoscaling.agones.dev/v1"
+kind: FleetAutoscaler
+metadata:
+  name: {{ include "game-server.fullname" . }}
+  labels:
+    {{- include "game-server.labels" . | nindent 4 }}
+spec:
+  fleetname: {{ include "game-server.fullname" . }}
+  policy:
+    {{ toYaml .Values.autoscaling.policy | nindent 4 }}
+  sync:
+    {{ toYaml .Values.autoscaling.sync | nindent 4 }}
+{{- end }}
