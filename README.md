@@ -1,5 +1,7 @@
 # C# GameSever
 
+OpenMatch와 Agones를 활용하여 Dedicated 서버를 쿠버네티스 클러스터에 배포하는 예제 코드입니다.
+
 ### 구성
 
 - Charts
