@@ -1,0 +1,19 @@
+director:
+  enabled: true
+  image:
+    repository: "localhost:5001/openmatch-director"
+    pullPolicy: Always
+    tag: "latest"
+
+mmf:
+  enabled: true
+  image:
+    repository: "localhost:5001/openmatch-mmf"
+    pullPolicy: Always
+    tag: "latest"
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 2
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80

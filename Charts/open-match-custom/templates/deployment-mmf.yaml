@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "open-match-mmf.name" . }}
+  labels:
+    {{- include "open-match-mmf.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.mmf.autoscaling.enabled }}
+  replicas: {{ .Values.mmf.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "open-match-mmf.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "open-match-mmf.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "open-match-custom.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "open-match-mmf.name" . }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.mmf.image.repository }}:{{ .Values.mmf.image.tag }}"
+          imagePullPolicy: {{ .Values.mmf.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.mmf.service.grpc.port }}
+              protocol: TCP
+            - name: http
+              containerPort: {{ .Values.mmf.service.http.port }}
+              protocol: TCP
+          {{- with .Values.mmf.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

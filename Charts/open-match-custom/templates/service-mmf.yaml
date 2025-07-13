@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "open-match-mmf.name" . }}
+  labels:
+    {{- include "open-match-mmf.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.mmf.service.type }}
+  ports:
+    - port: {{ .Values.mmf.service.grpc.port }}
+      protocol: TCP
+      name: grpc
+    - port: {{ .Values.mmf.service.http.port }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "open-match-mmf.selectorLabels" . | nindent 4 }}
