@@ -12,6 +12,9 @@ import (
 
 const (
 	ticketsPerPoolPerMatch = 2
+
+	MATCH_RANDOM = "match.random"
+	MATCH_CODE   = "match.code"
 )
 
 // Run is this match function's implementation of the gRPC call defined in api/matchfunction.proto.
@@ -43,8 +46,21 @@ func (s *MatchFunctionService) Run(req *pb.RunRequest, stream pb.MatchFunction_R
 }
 
 func makeMatches(p *pb.MatchProfile, poolTickets map[string][]*pb.Ticket) ([]*pb.Match, error) {
+	switch p.GetName() {
+	case MATCH_RANDOM:
+		return makeRandomMatches(p, poolTickets)
+	case MATCH_CODE:
+		return makeCodeMatches(p, poolTickets)
+	default:
+		log.Errorf("Unknown match profile %v", p.GetName())
+		return nil, fmt.Errorf("unknown match profile %v", p.GetName())
+	}
+}
+
+func makeRandomMatches(p *pb.MatchProfile, poolTickets map[string][]*pb.Ticket) ([]*pb.Match, error) {
 	var matches []*pb.Match
 	count := 0
+
 	for {
 		insufficientTickets := false
 		matchTickets := []*pb.Ticket{}
@@ -70,6 +86,43 @@ func makeMatches(p *pb.MatchProfile, poolTickets map[string][]*pb.Ticket) ([]*pb
 			MatchFunction: "match",
 			Tickets:       matchTickets,
 		})
+
+		count++
+	}
+
+	return matches, nil
+}
+
+// makeCodeMatches 티켓에 포함되어 있는 "code" 검색 필드를 기준으로 매치를 생성합니다. (친선경기)
+func makeCodeMatches(p *pb.MatchProfile, poolTickets map[string][]*pb.Ticket) ([]*pb.Match, error) {
+	var matches []*pb.Match
+	count := 0
+
+	// code별로 티켓을 그룹화합니다.
+	poolsByCode := make(map[string][]*pb.Ticket)
+	for _, tickets := range poolTickets {
+		for _, ticket := range tickets {
+			code := ticket.GetSearchFields().StringArgs["code"]
+			poolsByCode[code] = append(poolsByCode[code], ticket)
+		}
+	}
+
+	for _, tickets := range poolsByCode {
+		if len(tickets) < ticketsPerPoolPerMatch {
+			continue
+		}
+
+		matchTickets := tickets[0:ticketsPerPoolPerMatch]
+
+		mId := fmt.Sprintf("%v-%v-%v", p.GetName(), xid.New().String(), count)
+		matches = append(matches, &pb.Match{
+			MatchId:       mId,
+			MatchProfile:  p.GetName(),
+			MatchFunction: "match",
+			Tickets:       matchTickets,
+		})
+
+		log.Debugf("Created match %s with tickets %v", mId, matchTickets)
 
 		count++
 	}
